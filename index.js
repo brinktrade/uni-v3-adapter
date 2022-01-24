@@ -1,6 +1,6 @@
 module.exports = {
   "UniV3Adapter": {
-    "address": "0x618B6F1bC13a4f9264584C931E7Dfe2BB12B2Cac",
+    "address": "0x27f658feF66830459651E7987A431e40E1fc2c1f",
     "abi": [
       {
         "anonymous": false,
