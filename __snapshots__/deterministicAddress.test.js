@@ -1,3 +1,3 @@
 exports['UniV3Adapter.sol deterministic address check 1'] = `
-0x27f658feF66830459651E7987A431e40E1fc2c1f
+0x3996aB086dF2259b0adaeaaE9Aa61A111068CE03
 `
