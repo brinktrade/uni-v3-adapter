@@ -1,3 +1,3 @@
 # needed for mainnet forking
 ALCHEMY_URL=https://eth-mainnet.alchemyapi.io/v2/<your_key>
-ALCHEMY_KEY=<your_key>
+UNI_ROUTER_API=<routing-api url>

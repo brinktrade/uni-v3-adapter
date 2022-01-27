@@ -27,8 +27,7 @@ module.exports = {
       },
       allowUnlimitedContractSize: true,
       forking: {
-        url: ALCHEMY_URL,
-        blockNumber: 13779923
+        url: ALCHEMY_URL
       }
     }
   },

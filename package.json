@@ -39,6 +39,7 @@
   "homepage": "https://github.com/brinktrade/1inch-adapter#readme",
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
+    "axios": "^0.25.0",
     "chai": "^4.3.4"
   }
 }
