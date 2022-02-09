@@ -42,14 +42,10 @@ contract UniV3Adapter {
   /// @param account Address of the account to receive the tokenOut
   function uniV3Swap(bytes memory data, IERC20 tokenIn, uint tokenInAmount, IERC20 tokenOut, uint tokenOutAmount, address payable account) external payable {
     if (isETH(tokenIn)) {
-      if (weth.allowance(address(this), V3_SWAP_ROUTER_ADDRESS) < tokenInAmount) {
-        weth.approve(V3_SWAP_ROUTER_ADDRESS, MAX_INT);
-      }
+      _routerApproveMax(IERC20(address(weth)), tokenInAmount);
       weth.deposit{ value: msg.value }();
     } else {
-      if (tokenIn.allowance(address(this), V3_SWAP_ROUTER_ADDRESS) < tokenInAmount) {
-        tokenIn.approve(V3_SWAP_ROUTER_ADDRESS, MAX_INT);
-      }
+      _routerApproveMax(tokenIn, tokenInAmount);
     }
 
     assembly {
@@ -63,6 +59,12 @@ contract UniV3Adapter {
     } else {
       tokenOut.transfer(account, tokenOutAmount);
       tokenOut.transfer(ADAPTER_OWNER, tokenOut.balanceOf(address(this)));
+    }
+  }
+
+  function _routerApproveMax(IERC20 token, uint256 amount) internal {
+    if (token.allowance(address(this), V3_SWAP_ROUTER_ADDRESS) < amount) {
+      token.approve(V3_SWAP_ROUTER_ADDRESS, MAX_INT);
     }
   }
 
