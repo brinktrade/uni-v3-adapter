@@ -50,6 +50,10 @@ contract UniV3Adapter {
 
     assembly {
       let result := call(gas(), V3_SWAP_ROUTER_ADDRESS, 0, add(data, 0x20), mload(data), 0, 0)
+      if eq(result, 0) {
+        returndatacopy(0, 0, returndatasize())
+        revert(0, returndatasize())
+      }
     }
 
     if (isETH(tokenOut)) {
