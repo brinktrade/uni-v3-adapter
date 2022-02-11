@@ -24,6 +24,8 @@ contract UniV3Adapter {
   IERC20 private constant _ETH_ADDRESS = IERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
   IERC20 private constant _ZERO_ADDRESS = IERC20(0x0000000000000000000000000000000000000000);
 
+  error NotEnoughETH();
+
   /// @dev initialize the contract with WETH address
   /// @param _weth Address of weth
   function initialize (IWETH _weth) external {
@@ -57,7 +59,11 @@ contract UniV3Adapter {
     }
 
     if (isETH(tokenOut)) {
-      weth.withdraw(address(this).balance);
+      uint wethBal = weth.balanceOf(address(this));
+      weth.withdraw(wethBal);
+      if (wethBal < tokenOutAmount) {
+        revert NotEnoughETH();
+      }
       account.transfer(tokenOutAmount);
       ADAPTER_OWNER.transfer(address(this).balance);
     } else {

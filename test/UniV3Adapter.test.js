@@ -30,12 +30,10 @@ describe('uniV3Swap', function () {
     this.adapterOwner = await setupAdapterOwner()
     this.adapter = await UniV3Adapter.deploy()
     await this.adapter.initialize(WETH_ADDRESS)
-    await this.dai.transfer(this.adapter.address, ONE_HUNDRED)
-    await this.weth.transfer(this.adapter.address, ONE_HUNDRED)
   })
 
   it('token to weth', async function () {
-
+    await this.dai.transfer(this.adapter.address, ONE_HUNDRED)
     const requestString = process.env.UNI_ROUTER_API + 'quote?' +
     'tokenInAddress=' + DAI_ADDRESS + '&' +
     'tokenInChainId=1&' +
@@ -65,6 +63,7 @@ describe('uniV3Swap', function () {
   })
 
   it('weth to token', async function () {
+    await this.weth.transfer(this.adapter.address, ONE_HUNDRED)
     const requestString = process.env.UNI_ROUTER_API + 'quote?' +
     'tokenInAddress=' + WETH_ADDRESS + '&' +
     'tokenInChainId=1&' +
@@ -94,6 +93,7 @@ describe('uniV3Swap', function () {
   })
 
   it('token to token', async function () {
+    await this.dai.transfer(this.adapter.address, ONE_HUNDRED)
     const requestString = process.env.UNI_ROUTER_API + 'quote?' +
     'tokenInAddress=' + DAI_ADDRESS + '&' +
     'tokenInChainId=1&' +
@@ -149,6 +149,7 @@ describe('uniV3Swap', function () {
   })
 
   it('token to eth', async function () {
+    await this.dai.transfer(this.adapter.address, ONE_HUNDRED)
     const requestString = process.env.UNI_ROUTER_API + 'quote?' +
     'tokenInAddress=' + DAI_ADDRESS + '&' +
     'tokenInChainId=1&' +
@@ -166,7 +167,7 @@ describe('uniV3Swap', function () {
     const initialEthOwnerBalance = await ethers.provider.getBalance(this.adapterOwner.address)
     const initialEthBalance = await ethers.provider.getBalance(this.accountAddress);
 
-    await this.adapter.uniV3Swap(resp.data.methodParameters.calldata, DAI_ADDRESS, ONE_HUNDRED, ETH_ADDRESS, '10', this.accountAddress, { value: ethers.utils.parseEther("100.0") })
+    await this.adapter.uniV3Swap(resp.data.methodParameters.calldata, DAI_ADDRESS, ONE_HUNDRED, ETH_ADDRESS, '10', this.accountAddress)
 
     const finalDaiBalance = await this.dai.balanceOf(this.adapter.address)
     const finalEthOwnerBalance = await ethers.provider.getBalance(this.adapterOwner.address)
@@ -177,11 +178,32 @@ describe('uniV3Swap', function () {
     expect(finalEthBalance.eq(initialEthBalance.add(BN('10')))).to.equal(true)
   })
 
+  it('should revert on token to eth swap if not enough eth is available to transfer', async function () {
+    await this.dai.transfer(this.adapter.address, ONE_HUNDRED)
+    const amountIn = '10'
+    const requestString = process.env.UNI_ROUTER_API + 'quote?' +
+    'tokenInAddress=' + DAI_ADDRESS + '&' +
+    'tokenInChainId=1&' +
+    'tokenOutAddress=' + WETH_ADDRESS + '&' +
+    'tokenOutChainId=1&' +
+    'amount=' + amountIn + '&' +
+    'type=exactIn&' +
+    'protocols=v2,v3&' +
+    'recipient=' + this.adapter.address + '&' +
+    'slippageTolerance=20&' +
+    'deadline=10800'
+    const resp = await axios.get(requestString)
+
+    await expect(
+      this.adapter.uniV3Swap(resp.data.methodParameters.calldata, DAI_ADDRESS, amountIn, ETH_ADDRESS, ONE_HUNDRED, this.accountAddress)
+    ).to.be.revertedWith('NotEnoughETH()')
+  })
+
   it('should revert with reason string from swap router', async function () {
     const calldata = '0x5ae401dc00000000000000000000000000000000000000000000000000000000520416d200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e404e45aaf0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000000000000000000001f400000000000000000000000002c700918fadc472317d6741d35965deb3a7a4370000000000000000000000000000000000000000000000056bc75e2d63100000000000000000000000000000000000000000000000000000005b22cbfe9af800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
 
     await expect(
-      this.adapter.uniV3Swap(calldata, DAI_ADDRESS, ONE_HUNDRED, ETH_ADDRESS, '10', this.accountAddress, { value: ethers.utils.parseEther("100.0") })
+      this.adapter.uniV3Swap(calldata, DAI_ADDRESS, ONE_HUNDRED, ETH_ADDRESS, '10', this.accountAddress)
     ).to.be.revertedWith('Transaction too old')
   })
 })
