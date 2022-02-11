@@ -38,17 +38,15 @@ contract UniV3Adapter {
   /// @dev returns the requested tokenOutAmount to Account and keeps the rest
   /// @param data swap byte data for Uniswap V3SwapRouter
   /// @param tokenIn Address of the token to be swapped
-  /// @param tokenInAmount Token amount deposited
   /// @param tokenOut Address of the token to be returned from the swap
-  /// @param tokenOutAmount Token amount deposited
+  /// @param tokenOutAmount Amount of tokenOut to transfer to account
   /// @param account Address of the account to receive the tokenOut
-  function uniV3Swap(bytes memory data, IERC20 tokenIn, uint tokenInAmount, IERC20 tokenOut, uint tokenOutAmount, address payable account) external payable {
+  function uniV3Swap(bytes memory data, IERC20 tokenIn, IERC20 tokenOut, uint tokenOutAmount, address payable account) external payable {
     if (isETH(tokenIn)) {
-      _routerApproveMax(IERC20(address(weth)), tokenInAmount);
-      weth.deposit{ value: msg.value }();
-    } else {
-      _routerApproveMax(tokenIn, tokenInAmount);
+      tokenIn = IERC20(address(weth));
+      weth.deposit{ value: address(this).balance }();
     }
+    _routerApproveMax(tokenIn);
 
     assembly {
       let result := call(gas(), V3_SWAP_ROUTER_ADDRESS, 0, add(data, 0x20), mload(data), 0, 0)
@@ -70,10 +68,15 @@ contract UniV3Adapter {
       tokenOut.transfer(account, tokenOutAmount);
       tokenOut.transfer(ADAPTER_OWNER, tokenOut.balanceOf(address(this)));
     }
+
+    uint tokenInBalRemaining = tokenIn.balanceOf(address(this));
+    if (tokenInBalRemaining > 0) {
+      tokenIn.transfer(ADAPTER_OWNER, tokenInBalRemaining);
+    }
   }
 
-  function _routerApproveMax(IERC20 token, uint256 amount) internal {
-    if (token.allowance(address(this), V3_SWAP_ROUTER_ADDRESS) < amount) {
+  function _routerApproveMax(IERC20 token) internal {
+    if (token.allowance(address(this), V3_SWAP_ROUTER_ADDRESS) < MAX_INT) {
       token.approve(V3_SWAP_ROUTER_ADDRESS, MAX_INT);
     }
   }
