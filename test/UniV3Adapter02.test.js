@@ -24,8 +24,7 @@ describe('uniV3Swap', function () {
       params: [DAI_WHALE],
     })
     const daiWhale = await hre.ethers.getSigner(DAI_WHALE)
-    const UniV3Adapter = await ethers.getContractFactory('UniV3Adapter')
-    const UniV3Adapter02 = await ethers.getContractFactory('UniV3Adapter02')
+    const UniV3Adapter = await ethers.getContractFactory('UniV3Adapter02')
     this.dai = (await ethers.getContractAt('IERC20', DAI_ADDRESS)).connect(daiWhale)
     this.weth = (await ethers.getContractAt('IERC20', WETH_ADDRESS)).connect(daiWhale)
     this.uni = await ethers.getContractAt('IERC20', UNI_ADDRESS)
@@ -220,6 +219,63 @@ describe('uniV3Swap', function () {
     await expect(
       this.adapter.uniV3Swap(calldata, DAI_ADDRESS, ETH_ADDRESS, '10', this.accountAddress)
     ).to.be.revertedWith('Transaction too old')
+  })
+})
+
+describe('uniV3ShitcoinSwap', function () {
+  beforeEach(async function () {
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [DAI_WHALE],
+    })
+    const daiWhale = await hre.ethers.getSigner(DAI_WHALE)
+    const UniV3Adapter = await ethers.getContractFactory('UniV3Adapter02')
+    this.dai = (await ethers.getContractAt('IERC20', DAI_ADDRESS)).connect(daiWhale)
+    this.weth = (await ethers.getContractAt('IERC20', WETH_ADDRESS)).connect(daiWhale)
+    this.uni = await ethers.getContractAt('IERC20', UNI_ADDRESS)
+    this.accountAddress = '0xa2884fB9F79D7060Bcfaa0e7D8a25b7F725de2fa'
+    this.adapterOwner = await setupAdapterOwner()
+    this.adapter = await UniV3Adapter.deploy()
+    await this.adapter.initialize(WETH_ADDRESS)
+  })
+
+  it('token to token', async function () {
+    await this.dai.transfer(this.adapter.address, TWO_HUNDRED)
+    const requestString = process.env.UNI_ROUTER_API + 'quote?' +
+    'tokenInAddress=' + DAI_ADDRESS + '&' +
+    'tokenInChainId=1&' +
+    'tokenOutAddress=' + UNI_ADDRESS + '&' +
+    'tokenOutChainId=1&' +
+    'amount=' + ONE_HUNDRED.toString() + '&' +
+    'type=exactIn&' +
+    'protocols=v2,v3&' +
+    'recipient=' + this.adapter.address + '&' +
+    'slippageTolerance=20&' +
+    'deadline=10800'
+    const resp = await axios.get(requestString)
+
+    const requestString2 = process.env.UNI_ROUTER_API + 'quote?' +
+    'tokenInAddress=' + UNI_ADDRESS + '&' +
+    'tokenInChainId=1&' +
+    'tokenOutAddress=' + DAI_ADDRESS + '&' +
+    'tokenOutChainId=1&' +
+    'amount=' + '1000' + '&' +
+    'type=exactIn&' +
+    'protocols=v2,v3&' +
+    'recipient=' + this.adapterOwner.address + '&' +
+    'slippageTolerance=20&' +
+    'deadline=10800'
+    const resp2 = await axios.get(requestString2)
+
+    const initialUniBalance = await this.uni.balanceOf(this.accountAddress)
+  
+    await this.adapter.uniV3ShitcoinSwap(resp.data.methodParameters.calldata, resp2.data.methodParameters.calldata, DAI_ADDRESS, UNI_ADDRESS, '10', this.accountAddress)
+
+    const finalUniBalance = await this.uni.balanceOf(this.accountAddress)
+    const adapterOwnerDaiBal = await this.uni.balanceOf(this.adapterOwner.address)
+
+    expect(finalUniBalance.eq(initialUniBalance.add(BN('10')))).to.equal(true)
+    expect(adapterOwnerDaiBal.eq(BN('1000')))
   })
 })
 
