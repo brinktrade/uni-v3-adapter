@@ -5,8 +5,6 @@ pragma abicoder v1;
 import '../token/IERC20.sol';
 import '../token/IWETH.sol';
 
-import 'hardhat/console.sol';
-
 /// @title Brink UniV3Adapter02
 /// @notice Deployed once and used by Brink executors to fulfill swaps. Uses V3SwapRouter from Uniswap.
 contract UniV3Adapter02 {
