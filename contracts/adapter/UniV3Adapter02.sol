@@ -43,6 +43,8 @@ contract UniV3Adapter02 {
   /// @param tokenOut Address of the token to be returned from the swap
   /// @param tokenOutAmount Amount of tokenOut to transfer to account
   /// @param account Address of the account to receive the tokenOut
+  /// @param minTokenInArb Minimum amount of tokenIn arbitrage revenue remaining for ADAPTER_OWNER
+  /// @param minTokenOutArb Minimum amount of tokenOut arbitrage revenue remaining for ADAPTER_OWNER
   function uniV3Swap(bytes memory data, IERC20 tokenIn, IERC20 tokenOut, uint tokenOutAmount, address payable account, uint minTokenInArb, uint minTokenOutArb) external payable {
     if (isETH(tokenIn)) {
       tokenIn = IERC20(address(weth));
